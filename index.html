@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Console Layout Builder — Wing Compact</title>
+<style>
+:root{--navy:#16233f;--navy2:#1e3a5f;--gold:#fbbf24;--ink:#111827;--mut:#475569;--line:#cbd5e1;--bg:#f1f5f9}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+header{background:var(--navy);color:#fff;padding:18px 20px}
+header h1{margin:0;font-size:26px} header p{margin:6px 0 0;color:#cbd5e1}
+header .gold{color:var(--gold)}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin:0 0 16px}
+label{font-weight:700;font-size:13px} input,select,textarea{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit}
+textarea{min-height:90px}
+button{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer}
+button.secondary{background:#e2e8f0;color:var(--ink)} button.gold{background:var(--gold);color:#16233f}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px} @media(max-width:700px){.row{grid-template-columns:1fr}}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:14px} th,td{border-bottom:1px solid #e2e8f0;padding:6px;text-align:left;vertical-align:top}
+th{background:#f8fafc} td input{padding:5px}
+.pill{display:inline-block;background:#dbeafe;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:700}
+.small{color:var(--mut);font-size:13px;line-height:1.5}
+.poster{background:#fff;border:2px solid var(--navy);border-radius:12px;overflow:hidden}
+.poster-head{background:var(--navy);color:#fff;padding:16px 18px}
+.poster-head h2{margin:0;font-size:28px} .poster-head p{margin:4px 0 0;color:#cbd5e1}
+.poster-body{padding:16px 18px} .poster-body h3{background:var(--navy2);color:#fff;padding:8px 10px;border-radius:8px;font-size:15px;margin:18px 0 10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px} @media(max-width:700px){.grid2{grid-template-columns:1fr}}
+.chip{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:8px;margin:0 0 6px}
+.warn{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-weight:700}
+.tabs{display:flex;gap:8px;margin:0 0 12px} .tabs button{flex:1}
+.hidden{display:none}
+@page{size:11in 17in landscape;margin:0.35in}
+@media print{
+  body{background:#fff} header,.no-print{display:none!important}
+  main{max-width:none;padding:0} .card{border:0;padding:0;margin:0}
+  #editView{display:none!important} #posterView{display:block!important}
+  .poster{border:0;border-radius:0} a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<header class="no-print">
+  <h1>Console Layout Builder <span class="gold">— Wing Compact</span></h1>
+  <p>Pre-setup a console layout, edit it in tables, then print a poster to tape at the console. Landscape, 11×17 best, letter works smaller. This is a pre-setup / poster tool — it does not produce a Wing Edit show file; console entry is still manual from the poster.</p>
+</header>
+<main>
+<div class="card no-print">
+  <div class="row">
+    <div><label>Layout</label>
+      <select id="layoutPick"></select>
+    </div>
+    <div><label>Show / venue</label><input id="showInput"></div>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <div><label>Poster title</label><input id="titleInput"></div>
+    <div><label>Snapshot / baseline</label><input id="snapInput"></div>
+  </div>
+  <div class="toolbar">
+    <button id="posterBtn" class="gold">View poster</button>
+    <button id="editBtn" class="secondary">Edit layout</button>
+    <button id="printBtn">Print / Save PDF</button>
+    <button id="newBtn" class="secondary">New blank layout</button>
+    <button id="dupBtn" class="secondary">Duplicate layout</button>
+    <button id="delBtn" class="secondary">Delete layout</button>
+    <button id="resetBtn" class="secondary">Restore preset</button>
+    <button id="exportBtn" class="secondary">Export JSON</button>
+    <label class="secondary" style="display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:8px;cursor:pointer">Import JSON<input type="file" id="importFile" accept=".json,application/json" style="display:none"></label>
+  </div>
+  <p class="small" id="status">Edits save in this browser automatically. Use Export JSON to back a layout up or move it to another device.</p>
+  <p class="small"><b>Presets, as built:</b> Sunday = Second Presbyterian, 1–12 plus Flex Guest 20–23. Concert = Sunday 1–12 plus orchestra 13–19, guest 20–23, Choir Wide 24 optional. Blues Club = House of Blues-style, for fun only, not an official venue layout, separate show.</p>
+</div>
+
+<div id="editView" class="card no-print">
+  <h2 style="margin-top:0">Edit — channels, buses, DCAs</h2>
+  <p class="small">Edit names and sources directly. Add a row for a new strip, delete a row you are not using. Mains, matrices, FX, layers, snippets, check list, and warnings are edited as lines below, one per line.</p>
+  <h3>Channels</h3>
+  <table id="chanTable"><thead><tr><th style="width:70px">Strip</th><th>Name</th><th>Source / notes</th><th style="width:90px"></th></tr></thead><tbody></tbody></table>
+  <button id="addChan" class="secondary" style="margin-top:8px">+ Add channel</button>
+  <h3>Buses</h3>
+  <table id="busTable"><thead><tr><th style="width:70px">Bus</th><th>Name</th><th>Feeds / mode</th><th style="width:90px"></th></tr></thead><tbody></tbody></table>
+  <button id="addBus" class="secondary" style="margin-top:8px">+ Add bus</button>
+  <h3>DCAs</h3>
+  <table id="dcaTable"><thead><tr><th style="width:70px">DCA</th><th>Name</th><th>Assignment</th><th style="width:90px"></th></tr></thead><tbody></tbody></table>
+  <button id="addDca" class="secondary" style="margin-top:8px">+ Add DCA</button>
+  <div class="row" style="margin-top:16px">
+    <div><label>Mains (M1–M4) — one per line</label><textarea id="mainsInput"></textarea></div>
+    <div><label>Matrices (MX1–MX8) — one per line</label><textarea id="matrixInput"></textarea></div>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <div><label>FX sends / returns — one per line</label><textarea id="fxInput"></textarea></div>
+    <div><label>USER layers — one per line</label><textarea id="layerInput"></textarea></div>
+  </div>
+  <div class="row" style="margin-top:12px">
+    <div><label>Snapshots / snippets — one per line</label><textarea id="snapListInput"></textarea></div>
+    <div><label>Check list, in order — one per line</label><textarea id="checkInput"></textarea></div>
+  </div>
+  <div style="margin-top:12px"><label>Warnings / recall-safe notes — one per line</label><textarea id="warnInput"></textarea></div>
+</div>
+
+<div id="posterView">
+  <div class="poster" id="poster">
+    <div class="poster-head">
+      <div id="pShow" style="color:var(--gold);font-weight:800;letter-spacing:.04em"></div>
+      <h2 id="pTitle"></h2>
+      <p id="pSnap"></p>
+    </div>
+    <div class="poster-body">
+      <h3>Channels</h3><div id="pChan" class="grid2"></div>
+      <div class="grid2">
+        <div><h3>Buses</h3><div id="pBus"></div></div>
+        <div><h3>DCAs</h3><div id="pDca"></div></div>
+      </div>
+      <div class="grid2">
+        <div><h3>Mains</h3><div id="pMains"></div></div>
+        <div><h3>Matrices</h3><div id="pMatrix"></div></div>
+      </div>
+      <h3>FX</h3><div id="pFx"></div>
+      <h3>USER layers</h3><div id="pLayer"></div>
+      <h3>Snapshots / snippets</h3><div id="pSnapList"></div>
+      <h3>Check, in order</h3><ol id="pCheck" style="line-height:1.6"></ol>
+      <h3>Warnings — do not undo</h3><div id="pWarn" class="warn"></div>
+      <p class="small" style="margin-top:14px">Mains are M1–M4. Matrices are MX1–MX8. Subgroups = GROUP to M1 only. Independent mixes and effects = POST. Monitors = TAP. Matrices are speaker tuning only, not mixes. Print landscape, 11×17 best.</p>
+    </div>
+  </div>
+</div>
+</main>
+<script>
+const PRESETS = {
+"Sunday — Second Presbyterian": {
+ show:"Second Presbyterian Church of Chattanooga — SecondPres_Chattanooga", title:"Wing Compact — Sunday Layout", snapshot:"Snapshot: 01_Sunday_Baseline  •  Show: SecondPres_Chattanooga",
+ channels:[["1","HH 1","ULXD handheld, mono"],["2","HH 2","ULXD handheld, mono"],["3","HH 3","ULXD handheld, mono"],["4","HH 4","ULXD handheld, mono"],["5","HH 5","ULXD handheld, mono"],["6","HH 6","ULXD handheld, mono"],["7","Pastor","ULXD lav pack, mono"],["8","Liturgist","ULXD lav pack, mono"],["9","Pulpit","Shure gooseneck condenser"],["10","Piano","Steinway grand, 2x Crown PZM, stereo"],["11","Organ","Pipe organ, 2x PZM/boundary, stereo"],["12","Choir","2x Audix boom mics, stereo"],["20","Soloist","ULXD handheld or wired, flex, muted by default"],["21","Guest 1","Flex, muted by default"],["22","Guest 2","Flex, muted by default"],["23","Guest 3","Flex, muted by default"]],
+ buses:[["Bus 1","Speech","Channels 1–9, GROUP to M1 only"],["Bus 2","Piano","Channel 10, GROUP to M1 only"],["Bus 3","Organ","Channel 11, GROUP to M1 only"],["Bus 4","Choir","Channel 12, GROUP to M1 only"],["Bus 11","Hall Send","FX, POST"],["Bus 12","Delay Send","FX, POST, default OFF"],["Bus 13","Plate Send","FX, POST"]],
+ dcas:[["DCA 1","Handhelds","1–6"],["DCA 2","Clergy","7–9"],["DCA 3","Piano","10"],["DCA 4","Organ","11"],["DCA 5","Choir","12"],["DCA 6","All Speech","1–9"],["DCA 7","All Music","10–12, plus Aux FX returns"],["DCA 8","All Inputs","All inputs"]],
+ mains:["M1 House master → MX1 Bose, MX2 EV","M2 Currently unused","M3 Assisted listening — a main, direct from channels, POST","M4 Live stream — a main, direct from channels, POST"],
+ matrices:["MX1 Bose PA — low-pass filtered, recall-safe","MX2 Electro-Voice PA — fills out the room","MX3–MX8 Spare — future delay fill / lobby / cry room only"],
+ fx:["Bus 11 Hall Send → FX Hall, 1.8–2.2 s → Aux 1 Hall Return, Link OFF","Bus 13 Plate Send → FX Plate, 1.0–1.5 s → Aux 2 Plate Return, Link OFF","Bus 12 Delay Send → FX Delay, slap 120–180 ms, default OFF → Aux 3 Delay Return, Link OFF","Returns: M1 unity, M4 slightly higher, M3 low (-12), Delay OFF on M3","Sends: Speech 1–9 dry, Organ dry, Choir Hall Medium / Plate Light, Piano Hall Light"],
+ layers:["USER1 — INPUTS: 1 HH 1, 2 HH 2, 3 HH 3, 4 HH 4, 5 HH 5, 6 HH 6, 7 Pastor, 8 Liturgist, 9 Pulpit, 10 Piano, 11 Organ, 12 Choir","USER2 — SHOW: 1 DCA 1, 2 DCA 2, 3 DCA 3, 4 DCA 4, 5 DCA 5, 6 DCA 6, 7 DCA 7, 8 DCA 8, 9 Bus 1, 10 Bus 2, 11 Bus 3, 12 Bus 4","USER2 page 2 — FX: 13 Aux 1 Hall, 14 Aux 2 Plate, 15 Aux 3 Delay, 16 M1, 17 M4, 18 M3 — soundcheck only, park on page 1 for the service","Right section: normal Mains/Matrices view for M1, M4, M3"],
+ snaplist:["Show: SecondPres_Chattanooga (one show only)","Snapshots: 01_Sunday_Baseline, 02_Concert_Baseline, 99_SYS_Tuning (last, recall-safe)","Snippets, not full scenes: 10_Prelude, 11_Hymn_Anthem, 12_Sermon, 13_Postlude, 14_Speech_Only, 15_Concert_Music, 18_Guest_Set"],
+ check:["Baseline M1/M3/M4 + MX1/MX2 safe","Speech 7, 8, 9, then 1–6","Piano → Organ → Choir","Listen to M4 alone","Listen to M3 alone for intelligibility","Park on USER2 SHOW, page 1"],
+ warnings:["MX1 Bose low-pass is recall-safe — do not let a scene/snippet recall strip it.","Pastor/pulpit sit within the Bose ~130° dispersion — that is why Bose is low-passed and EV fills the room.","No direct channel → M1 send, or house is double-fed. Buses 1–4 feed M1 only; M3/M4 are direct from channels, not from buses.","Sunday 13–19 are muted (orchestra). Choir Wide 24 is muted unless the suspended MX202W/S pair is repaired and tested."]
+},
+"Concert — Second Presbyterian": {
+ show:"Second Presbyterian Church of Chattanooga — SecondPres_Chattanooga", title:"Wing Compact — Concert / Special Event Layout", snapshot:"Snapshot: 02_Concert_Baseline  •  Show: SecondPres_Chattanooga  •  Built from Sunday, not a second INIT",
+ channels:[["1","HH 1","ULXD handheld, mono"],["2","HH 2","ULXD handheld, mono"],["3","HH 3","ULXD handheld, mono"],["4","HH 4","ULXD handheld, mono"],["5","HH 5","ULXD handheld, mono"],["6","HH 6","ULXD handheld, mono"],["7","Pastor","ULXD lav pack, mono"],["8","Liturgist","ULXD lav pack, mono"],["9","Pulpit","Shure gooseneck condenser"],["10","Piano","Steinway grand, 2x Crown PZM, stereo"],["11","Organ","Pipe organ, 2x PZM/boundary, stereo"],["12","Choir","2x Audix boom mics, stereo"],["13","Strings High","Violins I, stereo section pair"],["14","Strings Mid","Violins II / Viola, stereo"],["15","Strings Low","Cello / Bass, stereo"],["16","Winds","Flute, Oboe, Clarinet, Bassoon, stereo"],["17","Brass","Horns, Trumpet, Trombone, stereo"],["18","Timpani","Stereo pair"],["19","Percussion","General percussion, stereo overhead/area pair"],["20","Soloist","ULXD handheld or wired, as booked"],["21","Guest 1","Flex — e.g. Fiddle, confirm at load-in"],["22","Guest 2","Flex — e.g. Guitar / bouzouki DI, confirm at load-in"],["23","Guest 3","Flex — e.g. Bodhrán / vocal, confirm at load-in"],["24","Choir Wide","OPTIONAL, stereo, only if suspended MX202W/S pair is repaired and tested, otherwise blank/muted"]],
+ buses:[["Bus 1","Speech","1–9, GROUP to M1 only"],["Bus 2","Piano","10, GROUP to M1 only"],["Bus 3","Organ","11, GROUP to M1 only"],["Bus 4","Choir","12 + 24, GROUP to M1 only"],["Bus 5","Strings","13–15, GROUP to M1 only"],["Bus 6","Winds","16, GROUP to M1 only"],["Bus 7","Brass","17, GROUP to M1 only"],["Bus 8","Timpani","18, GROUP to M1 only"],["Bus 9","Percussion","19, GROUP to M1 only"],["Bus 10","Guest / Soloist","20–23, GROUP to M1 only"],["Bus 11","Hall Send","FX, POST"],["Bus 12","Delay Send","FX, POST, default OFF"],["Bus 13","Plate Send","FX, POST"]],
+ dcas:[["DCA 1","Strings","13–15"],["DCA 2","Winds / Brass","16–17"],["DCA 3","Percussion","18–19"],["DCA 4","Choir","12 + 24"],["DCA 5","Piano / Organ","10–11"],["DCA 6","Soloist / Guest","20–23"],["DCA 7","All Orchestra","13–19"],["DCA 8","All Music","10–19, 12, 24, plus Aux FX returns"]],
+ mains:["M1 House master → MX1 Bose, MX2 EV","M2 Currently unused","M3 Assisted listening — concert: announcements unity, choir/orchestra -3 to -6 to start","M4 Live stream — concert: music-forward, orchestra/choir up relative to house"],
+ matrices:["MX1 Bose PA — low-pass filtered, recall-safe","MX2 Electro-Voice PA — fills out the room","MX3–MX8 Spare — future delay fill / lobby / cry room only"],
+ fx:["Bus 11 Hall Send → FX Hall → Aux 1 Hall Return, Link OFF","Bus 13 Plate Send → FX Plate → Aux 2 Plate Return, Link OFF","Bus 12 Delay Send → FX Delay, contemporary only → Aux 3 Delay Return, Link OFF","Returns: M1 unity, M4 slightly higher, M3 low, Delay OFF on M3","Sends: Speech/Organ/Timpani dry, Choir Hall Medium, Strings/Winds/Brass Hall Light–Medium, Soloist/Guest Hall Light / Plate Medium"],
+ layers:["USER1-CONCERT — Inputs 13–24 in order; Sunday 1–12 remain on default CH 1–12 layer","USER2-CONCERT — DCA 1–8 concert, plus Bus 5 Strings, Bus 6 Winds, Bus 7 Brass, Bus 8 Timpani; Bus 9–10 stay on bus layer in centre section","Right section: normal Mains/Matrices view for M1, M4, M3"],
+ snaplist:["Show: SecondPres_Chattanooga (one show only)","Snapshots: 01_Sunday_Baseline, 02_Concert_Baseline, 99_SYS_Tuning (last, recall-safe)","Snippets: 15_Concert_Music, 16_Orchestra_Only, 17_Choir_Orchestra, 18_Guest_Set, 19_Announcements — snippet-only, no MX tuning / ULXD trims / patch recall"],
+ check:["Baseline / MX safe","Strings → Winds → Brass","Timpani alone for headroom and room low end through MX1","Percussion alone for transients / masking","Choir + orchestra, then soloist / guest","M4 alone, then M3 alone","Park on USER2-CONCERT"],
+ warnings:["Full stereo version is 35 physical sources — more than 24 local preamps, so it needs an AES50 stagebox.","Local-only fallback, 24 inputs: keep Sunday 1–12, add Strings High stereo, Strings Low stereo, Winds/Brass combined stereo, Timpani mono, Percussion mono, Soloist mono. Drop Guest 21–23 and Choir Wide 24 first, then collapse Winds/Brass, then drop Percussion before Strings. Do not drop choir or soloist for percussion.","Watch timpani/percussion hitting the M4 limiter first — pull timpani send to M4 before letting the limiter squash the mix.","MX1 Bose low-pass is recall-safe. Guest instrumentation is per-event, not hard-coded."]
+},
+"Blues Club — for fun": {
+ show:"Blues Club — House of Blues-style, for fun only, not an official venue layout — BluesClub_Venue", title:"Wing Compact — Blues Club Layout", snapshot:"Snapshot: 01_Blues_Baseline  •  Show: BluesClub_Venue, separate from SecondPres_Chattanooga",
+ channels:[["1","Kick","Kick mic, in"],["2","Snare","Snare top mic"],["3","Hi-Hat","Hi-hat mic"],["4","Rack Tom","Rack tom mic"],["5","Floor Tom","Floor tom mic"],["6","Overheads","Overheads, stereo pair"],["7","Bass DI","Bass DI"],["8","Bass Amp","Bass amp mic, optional — mute if DI only"],["9","Guitar Lead","Lead amp mic"],["10","Guitar Rhythm","Rhythm / slide amp mic"],["11","Keys Hammond","Hammond / organ, stereo"],["12","Keys Piano","Piano / Rhodes, stereo"],["13","Harmonica","Harp mic / harp amp mic"],["14","Trumpet","Trumpet mic"],["15","Sax","Tenor sax mic"],["16","Trombone","Trombone mic"],["17","Lead Vocal","Lead vocal mic"],["18","Harmony 1","Harmony vocal mic"],["19","Harmony 2","Harmony vocal mic"],["20","Guest Vocal","Sit-in vocal, flex"],["21","Guest Guitar","Sit-in guitar amp / DI, flex"],["22","Guest Harp / Keys","Sit-in harp, keys, or second guitar, flex"],["23","Talkback / MC","MC / announcer mic, muted during songs"],["24","Crowd / Room","Room / crowd mic, for stream and recording only"]],
+ buses:[["Bus 1","Drums","1–6, GROUP to M1 only"],["Bus 2","Bass","7–8, GROUP to M1 only"],["Bus 3","Guitars","9–10, GROUP to M1 only"],["Bus 4","Keys / Harp","11–13, GROUP to M1 only"],["Bus 5","Horns","14–16, GROUP to M1 only"],["Bus 6","Vocals","17–19, GROUP to M1 only"],["Bus 7","Guest","20–22, GROUP to M1 only, muted when no guest set"],["Bus 8","Drums monitor","TAP, pre-fader"],["Bus 9","Bass monitor","TAP, pre-fader"],["Bus 10","Guitar monitor","TAP, pre-fader"],["Bus 11","Keys monitor","TAP, pre-fader"],["Bus 12","Vocal monitor / IEM","TAP, pre-fader"],["Bus 13","Horns monitor","TAP, pre-fader"],["Bus 14","Guest monitor","TAP, pre-fader"],["Bus 15","Vocal Reverb Send","FX, POST"],["Bus 16","Slap Delay Send","FX, POST"]],
+ dcas:[["DCA 1","Drums","1–6"],["DCA 2","Bass / Guitars","7–10"],["DCA 3","Keys / Harp","11–13"],["DCA 4","Horns","14–16"],["DCA 5","Vocals","17–19"],["DCA 6","Guest","20–22"],["DCA 7","All Band","1–22"],["DCA 8","FX Returns","Aux 1–2"]],
+ mains:["M1 FOH House → MX1 Main, MX2 Subs, MX3 Delay fills, MX4 Lobby","M2 Stream / Record — channels direct, POST, music-forward, Crowd mic 24 up","M3 Lobby / Bar — channels direct, POST, lower level","M4 Spare — second stream, patio, or overflow"],
+ matrices:["MX1 Main PA — main system tuning only","MX2 Subs — sub tuning / crossover only, kick and bass live here","MX3 Delay fills / Balcony — delay and EQ for the back of the room","MX4 Lobby / Bar — lower level"],
+ fx:["Bus 15 Vocal Reverb Send → FX Reverb → Aux 1 Reverb Return, Link OFF","Bus 16 Slap Delay Send → FX Delay → Aux 2 Delay Return, Link OFF","Lead Vocal: Reverb Medium, Delay Light (slap, not echo). Harmony: Reverb Light. Lead Guitar: Delay Very Light, Reverb —. Drums: Reverb Very Light on snare/overheads only, not kick. Horns: Reverb Light. Bass/Keys: dry to start."],
+ layers:["USER1 — Inputs 1–12: Drums, Bass, Guitars, Keys","USER1 page 2 — Inputs 13–24: Harp, Horns, Vocals, Guest, Talkback, Crowd","USER2 — SHOW, park here: DCA 1–8, plus Bus 1 Drums, Bus 3 Guitars, Bus 6 Vocals, Bus 7 Guest","Right section: Mains/Matrices for M1, M2, MX1/MX2/MX3. Centre: Buses/Monitors for soundcheck monitor tweaks"],
+ snaplist:["Show: BluesClub_Venue, separate from SecondPres_Chattanooga","Snapshots: 01_Blues_Baseline, 02_Guest_Baseline, 99_SYS_Tuning (last, recall-safe)","Snippets: 10_Set_Opener, 11_Slow_Blues, 12_Shuffle_Up_Tempo, 13_Guest_Set, 14_Encore, 15_Set_Break"],
+ check:["PA: MX1 mains, MX2 subs, MX3 delay fills — kick and bass alone, then a full band hit","Drums: kick, snare, hats, toms, overheads — no reverb yet","Bass + guitars: DI vs. amp balance, then together","Keys, harp, horns: section by section, horns last so they do not mask vocals","Vocals: lead, then harmonies, then reverb/delay on lead only to start","Monitors: one musician at a time, TAP sends, no house fader moves while checking monitors","Guest: each guest strip individually, re-label, confirm monitor Bus 14, then mute if no guest","Stream: M2 alone, crowd mic 24 up just enough to hear the room, not the PA","Park on USER2 Show, talkback 23 muted, before doors"],
+ warnings:["Crowd mic 24 goes to M2 Stream/Record only, not to M1 house, or you will feed the room back into itself.","Do not feed subs from a separate mix — MX2 is a tuning/crossover output from M1, not a second FOH mix.","Full version is 27 physical inputs (stereo overheads, Hammond, piano) — needs an AES50 stagebox. Local-only: drop Bass Amp first, then collapse overheads to mono.","A blues room is already live — too much reverb turns a tight band into mush. Start dry, add vocal reverb first."]
+}
+};
+const KEY="wing-layout-builder-v1";
+let layouts, current;
+function blankLayout(name){return {name, show:"", title:name, snapshot:"", channels:[["1","",""]], buses:[], dcas:[], mains:[], matrices:[], fx:[], layers:[], snaplist:[], check:[], warnings:[]};}
+function load(){
+  try{const raw=localStorage.getItem(KEY); if(raw){layouts=JSON.parse(raw); current=Object.keys(layouts)[0]; return;}}catch(e){}
+  layouts=JSON.parse(JSON.stringify(PRESETS)); layouts["Blank layout"]=blankLayout("Blank layout"); current="Sunday — Second Presbyterian";
+}
+function save(){localStorage.setItem(KEY, JSON.stringify(layouts)); document.getElementById("status").textContent="Saved in this browser at "+new Date().toLocaleTimeString()+". Use Export JSON to back it up.";}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function renderPick(){
+  const sel=document.getElementById("layoutPick"); sel.innerHTML="";
+  Object.keys(layouts).forEach(k=>{const o=document.createElement("option"); o.value=k; o.textContent=k; if(k===current)o.selected=true; sel.appendChild(o);});
+}
+function renderEdit(){
+  const L=layouts[current];
+  document.getElementById("showInput").value=L.show||""; document.getElementById("titleInput").value=L.title||""; document.getElementById("snapInput").value=L.snapshot||"";
+  document.getElementById("mainsInput").value=(L.mains||[]).join("\n"); document.getElementById("matrixInput").value=(L.matrices||[]).join("\n");
+  document.getElementById("fxInput").value=(L.fx||[]).join("\n"); document.getElementById("layerInput").value=(L.layers||[]).join("\n");
+  document.getElementById("snapListInput").value=(L.snaplist||[]).join("\n"); document.getElementById("checkInput").value=(L.check||[]).join("\n"); document.getElementById("warnInput").value=(L.warnings||[]).join("\n");
+  const bind=(tbodyId, rows, addId)=>{
+    const tb=document.querySelector("#"+tbodyId+" tbody"); tb.innerHTML="";
+    rows.forEach((r,i)=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML='<td><input value="'+esc(r[0])+'"></td><td><input value="'+esc(r[1])+'"></td><td><input value="'+esc(r[2])+'"></td><td><button class="secondary">Delete</button></td>';
+      const ins=tr.querySelectorAll("input"); ins.forEach((inp,j)=>inp.addEventListener("input",()=>{rows[i][j]=inp.value; syncFromEdit(); renderPoster(); save();}));
+      tr.querySelector("button").addEventListener("click",()=>{rows.splice(i,1); renderEdit(); renderPoster(); save();});
+      tb.appendChild(tr);
+    });
+  };
+  bind("chanTable", L.channels); bind("busTable", L.buses); bind("dcaTable", L.dcas);
+}
+function syncFromEdit(){
+  const L=layouts[current];
+  L.show=document.getElementById("showInput").value; L.title=document.getElementById("titleInput").value; L.snapshot=document.getElementById("snapInput").value;
+  const lines=id=>document.getElementById(id).value.split("\n").map(s=>s.trim()).filter(Boolean);
+  L.mains=lines("mainsInput"); L.matrices=lines("matrixInput"); L.fx=lines("fxInput"); L.layers=lines("layerInput"); L.snaplist=lines("snapListInput"); L.check=lines("checkInput"); L.warnings=lines("warnInput");
+}
+function renderPoster(){
+  const L=layouts[current];
+  document.getElementById("pShow").textContent=L.show||""; document.getElementById("pTitle").textContent=L.title||current; document.getElementById("pSnap").textContent=L.snapshot||"";
+  document.getElementById("pChan").innerHTML=(L.channels||[]).map(r=>'<div class="chip"><span class="pill">'+esc(r[0])+'</span> <b>'+esc(r[1])+'</b> — '+esc(r[2])+'</div>').join("")||"<p class='small'>No channels yet.</p>";
+  const list=(arr)=> (arr||[]).map(r=>'<div class="chip"><span class="pill">'+esc(r[0])+'</span> <b>'+esc(r[1])+'</b> — '+esc(r[2])+'</div>').join("");
+  document.getElementById("pBus").innerHTML=list(L.buses); document.getElementById("pDca").innerHTML=list(L.dcas);
+  const lines=(arr)=> (arr||[]).map(s=>'<div class="chip">'+esc(s)+'</div>').join("");
+  document.getElementById("pMains").innerHTML=lines(L.mains); document.getElementById("pMatrix").innerHTML=lines(L.matrices);
+  document.getElementById("pFx").innerHTML=lines(L.fx); document.getElementById("pLayer").innerHTML=lines(L.layers); document.getElementById("pSnapList").innerHTML=lines(L.snaplist);
+  document.getElementById("pCheck").innerHTML=(L.check||[]).map(s=>"<li>"+esc(s)+"</li>").join("");
+  document.getElementById("pWarn").innerHTML=(L.warnings||[]).map(s=>esc(s)).join("<br>");
+}
+function showPoster(){document.getElementById("editView").classList.add("hidden"); document.getElementById("posterView").classList.remove("hidden"); renderPoster();}
+function showEdit(){document.getElementById("posterView").classList.add("hidden"); document.getElementById("editView").classList.remove("hidden");}
+document.getElementById("layoutPick").addEventListener("change",e=>{current=e.target.value; renderEdit(); renderPoster();});
+["showInput","titleInput","snapInput","mainsInput","matrixInput","fxInput","layerInput","snapListInput","checkInput","warnInput"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{syncFromEdit(); renderPoster(); save();}));
+document.getElementById("posterBtn").addEventListener("click",showPoster);
+document.getElementById("editBtn").addEventListener("click",showEdit);
+document.getElementById("printBtn").addEventListener("click",()=>{syncFromEdit(); renderPoster(); showPoster(); setTimeout(()=>window.print(),100);});
+document.getElementById("addChan").addEventListener("click",()=>{layouts[current].channels.push([String(layouts[current].channels.length+1),"",""]); renderEdit(); renderPoster(); save();});
+document.getElementById("addBus").addEventListener("click",()=>{layouts[current].buses.push(["Bus ","",""]); renderEdit(); renderPoster(); save();});
+document.getElementById("addDca").addEventListener("click",()=>{layouts[current].dcas.push(["DCA ","",""]); renderEdit(); renderPoster(); save();});
+document.getElementById("newBtn").addEventListener("click",()=>{const n=prompt("Name for the new layout?","New layout")||"New layout"; layouts[n]=blankLayout(n); current=n; renderPick(); renderEdit(); renderPoster(); save(); showEdit();});
+document.getElementById("dupBtn").addEventListener("click",()=>{const n=(current+" — copy"); layouts[n]=JSON.parse(JSON.stringify(layouts[current])); layouts[n].name=n; current=n; renderPick(); renderEdit(); renderPoster(); save();});
+document.getElementById("delBtn").addEventListener("click",()=>{if(!confirm("Delete '"+current+"'? This cannot be undone in this browser."))return; delete layouts[current]; if(!Object.keys(layouts).length)layouts["Blank layout"]=blankLayout("Blank layout"); current=Object.keys(layouts)[0]; renderPick(); renderEdit(); renderPoster(); save();});
+document.getElementById("resetBtn").addEventListener("click",()=>{if(PRESETS[current]){layouts[current]=JSON.parse(JSON.stringify(PRESETS[current])); renderEdit(); renderPoster(); save(); alert("Restored the original preset for '"+current+"'.");}else{alert("This is not a preset, so there is nothing to restore.");}});
+document.getElementById("exportBtn").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(layouts,null,2)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="wing-console-layouts.json"; a.click();});
+document.getElementById("importFile").addEventListener("change",e=>{const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>{try{const data=JSON.parse(r.result); Object.assign(layouts,data); current=Object.keys(data)[0]||current; renderPick(); renderEdit(); renderPoster(); save(); alert("Imported layouts.");}catch(err){alert("That file did not look like a layouts JSON export.");}}; r.readAsText(f);});
+load(); renderPick(); renderEdit(); renderPoster(); showPoster();
+</script>
+</body>
+</html>
